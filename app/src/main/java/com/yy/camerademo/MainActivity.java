@@ -22,6 +22,12 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import rx.Subscriber;
 
 public class MainActivity extends Activity {
 
@@ -62,7 +68,7 @@ public class MainActivity extends Activity {
 
     private void takePhoto() {
         Intent intentToTakePhoto = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        photoFile = new File(Environment.getExternalStorageDirectory().getPath()+"/photo/test/"
+        photoFile = new File(Environment.getExternalStorageDirectory().getPath() + "/"
             + Math.random()
             + "photo.jpeg");
         if (photoFile.exists()) {
@@ -89,7 +95,7 @@ public class MainActivity extends Activity {
     private void crop() {
         if (requestPermission(RC_CROP_PHOTO)) {
             desUri = Uri.fromFile(new File(
-                Environment.getExternalStorageDirectory().getPath()+"/photo/test/"
+                Environment.getExternalStorageDirectory().getPath() + "/"
                     + "crop_"
                     + Math.random()
                     + ".jpg"));
@@ -135,14 +141,10 @@ public class MainActivity extends Activity {
         @NonNull int[] grantResults) {
         switch (requestCode) {
             case RC_TAKE_PHOTO:   //拍照权限申请返回
-                if (grantResults.length == 2
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED
-                    && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    takePic();
-                }
+                takePic();
                 break;
             case RC_CHOOSE_PHOTO:   //相册选择照片权限申请返回
-                choosePhoto();
+                openAlbum();
                 break;
             case RC_CROP_PHOTO:
                 crop();
@@ -187,22 +189,38 @@ public class MainActivity extends Activity {
                     crop();
                     break;
                 case RC_CROP_PHOTO:
-                    //if (data != null) {
-                    //    if (data.getData() != null) {
-                    //        finalFile = new File(data.getData().getPath());
-                    //    } else if (data.getAction() != null) {
-                    //        finalFile = new File(data.getAction());
-                    //    }
-                    //} else {
-                    //
-                    //}
                     finalFile = new File(desUri.getPath());
+                    upload(finalFile);
                     Glide.with(this)
                         .load(finalFile)
                         .apply(requestOptions)
                         .into((ImageView) findViewById(R.id.img_result));
+                    textView.setText(finalFile.getPath());
                     break;
             }
         }
+    }
+
+    private void upload(File file) {
+
+        RequestBody requestBody = RequestBody.create(MediaType.parse("image/jpg"), file);
+        MultipartBody.Part part =
+            MultipartBody.Part.createFormData("file", file.getName(), requestBody);
+        List<MultipartBody.Part> imgs = new ArrayList<>();
+        imgs.add(part);
+        ApiHelper.getInstance("http://218.92.211.30:10017/" + "file/").uploadIcon(imgs).subscribe(
+            new Subscriber<UploadResultBean>() {
+                @Override public void onCompleted() {
+
+                }
+
+                @Override public void onError(Throwable e) {
+                    Log.e("tag", e.getMessage());
+                }
+
+                @Override public void onNext(UploadResultBean uploadResultBean) {
+                    Log.e("tag", "图片上传结果" + uploadResultBean.toString());
+                }
+            });
     }
 }

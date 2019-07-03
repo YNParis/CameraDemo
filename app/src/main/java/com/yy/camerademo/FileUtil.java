@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.util.Log;
 
 public class FileUtil {
     /**
@@ -76,7 +77,7 @@ public class FileUtil {
                     filePath = Environment.getExternalStorageDirectory() + "/" + split[1];
                 }
             }else {
-                //Log.e("路径错误");
+                Log.e("photo","路径错误");
             }
         } else if ("content".equalsIgnoreCase(uri.getScheme())) {
             // 如果是 content 类型的 Uri
